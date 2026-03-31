@@ -81,15 +81,16 @@ const filterItems = document.querySelectorAll("[data-filter-item]");
 const filterFunc = function (selectedValue) {
 
   for (let i = 0; i < filterItems.length; i++) {
+    filterItems[i].classList.remove("active");
+  }
 
-    if (selectedValue === "all") {
+  // force reflow to restart CSS animation
+  if (filterItems.length > 0) void filterItems[0].offsetWidth;
+
+  for (let i = 0; i < filterItems.length; i++) {
+    if (selectedValue === "all" || selectedValue === filterItems[i].dataset.category) {
       filterItems[i].classList.add("active");
-    } else if (selectedValue === filterItems[i].dataset.category) {
-      filterItems[i].classList.add("active");
-    } else {
-      filterItems[i].classList.remove("active");
     }
-
   }
 
 }
