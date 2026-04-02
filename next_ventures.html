@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEXT Ventures — Internal Operations Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    :root {
+      --bg: #0A0A0A;
+      --bg2: #111111;
+      --card: #1A1A1A;
+      --card-hover: #222222;
+      --border: #2A2A2A;
+      --border-h: #3A3A3A;
+      --t1: #F0F0F0;
+      --t2: #999999;
+      --t3: #555555;
+      --accent: #E11B36;
+      --accent-g: #E11B3640;
+      --accent-l: #FF3050;
+      --green: #34D399;
+      --yellow: #FBBF24;
+      --red: #E11B36;
+    }
+
+    html,
+    body {
+      height: 100%;
+      overflow: hidden
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--t1);
+      -webkit-font-smoothing: antialiased
+    }
+
+    .app {
+      display: flex;
+      height: 100vh;
+      overflow: hidden
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 230px;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0
+    }
+
+    .logo {
+      padding: 20px 18px 16px;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .logo-title {
+      font-weight: 800;
+      font-size: 17px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 9px
+    }
+
+    .logo-icon {
+      background: #E11B36;
+      border-radius: 8px;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff
+    }
+
+    .logo-sub {
+      font-size: 9px;
+      color: var(--t3);
+      letter-spacing: .12em;
+      margin-top: 4px
+    }
+
+    .mod-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 10px
+    }
+
+    .mod-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--t3);
+      letter-spacing: .15em;
+      padding: 6px 10px 10px
+    }
+
+    .mod-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 12px;
+      border-radius: 9px;
+      border: none;
+      background: transparent;
+      color: var(--t2);
+      cursor: pointer;
+      text-align: left;
+      transition: all .15s;
+      font-size: 13px;
+      font-family: inherit
+    }
+
+    .mod-btn.active {
+      background: var(--accent-g);
+      color: #fff
+    }
+
+    .mod-btn:hover:not(.active) {
+      background: var(--card);
+      color: #ccc
+    }
+
+    .mod-icon {
+      font-size: 15px;
+      width: 22px;
+      text-align: center
+    }
+
+    .mod-name {
+      flex: 1;
+      font-size: 12.5px;
+      font-weight: 500
+    }
+
+    .mod-badge {
+      border-radius: 10px;
+      padding: 2px 8px;
+      font-size: 9px;
+      font-weight: 700
+    }
+
+    .new-btn-wrap {
+      padding: 12px 14px;
+      border-top: 1px solid var(--border)
+    }
+
+    .new-btn {
+      width: 100%;
+      background: #E11B36;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 0;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform .15s, box-shadow .15s
+    }
+
+    .new-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 18px var(--accent-g)
+    }
+
+    /* ── Main ── */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative
+    }
+
+    .header {
+      padding: 16px 28px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between
+    }
+
+    .header-title {
+      font-weight: 700;
+      font-size: 17px;
+      color: #fff
+    }
+
+    .header-sub {
+      font-size: 11px;
+      color: var(--t3);
+      margin-top: 2px
+    }
+
+    .tabs {
+      display: flex;
+      gap: 6px
+    }
+
+    .tab {
+      padding: 6px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--t3);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all .15s
+    }
+
+    .tab.active {
+      border-color: var(--accent);
+      background: var(--accent-g);
+      color: var(--accent-l)
+    }
+
+    .tab:hover:not(.active) {
+      border-color: var(--border-h);
+      color: var(--t2)
+    }
+
+    .stats {
+      display: flex;
+      gap: 14px;
+      padding: 16px 28px 0
+    }
+
+    .stat {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      flex: 1;
+      transition: border-color .2s
+    }
+
+    .stat:hover {
+      border-color: var(--border-h)
+    }
+
+    .stat-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--t3);
+      letter-spacing: .12em;
+      margin-bottom: 8px
+    }
+
+    .stat-val {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -.5px
+    }
+
+    .list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 28px 28px
+    }
+
+    .req-row {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      margin-bottom: 8px;
+      transition: all .15s
+    }
+
+    .req-row:hover {
+      border-color: var(--border-h);
+      background: var(--card-hover);
+      transform: translateX(2px)
+    }
+
+    .req-mod-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0
+    }
+
+    .req-info {
+      flex: 1;
+      min-width: 0
+    }
+
+    .req-name {
+      font-weight: 600;
+      color: var(--t1);
+      font-size: 13.5px
+    }
+
+    .req-meta {
+      font-size: 11px;
+      color: var(--t3);
+      margin-top: 3px
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border-radius: 20px;
+      padding: 4px 11px;
+      font-size: 11px;
+      font-weight: 700
+    }
+
+    .badge-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%
+    }
+
+    .chevron {
+      color: var(--t3);
+      font-size: 16px;
+      margin-left: 4px;
+      transition: transform .15s
+    }
+
+    .req-row:hover .chevron {
+      transform: translateX(3px);
+      color: var(--t2)
+    }
+
+    /* ── Panel ── */
+    .panel {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 400px;
+      height: 100%;
+      background: var(--bg2);
+      border-left: 1px solid var(--border);
+      padding: 26px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+      animation: slideIn .2s ease
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(20px);
+        opacity: 0
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1
+      }
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 22px
+    }
+
+    .panel-mod {
+      display: flex;
+      align-items: center;
+      gap: 12px
+    }
+
+    .panel-mod-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 21px
+    }
+
+    .panel-close {
+      background: none;
+      border: none;
+      color: var(--t3);
+      font-size: 20px;
+      cursor: pointer;
+      transition: color .15s;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center
+    }
+
+    .panel-close:hover {
+      color: #fff;
+      background: var(--card)
+    }
+
+    .info-block {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 16px 18px;
+      margin-top: 14px
+    }
+
+    .info-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--t3);
+      letter-spacing: .12em;
+      margin-bottom: 12px
+    }
+
+    .field-key {
+      font-size: 9px;
+      color: var(--t3);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 3px
+    }
+
+    .field-val {
+      font-size: 13px;
+      color: #C8C8E0;
+      line-height: 1.5;
+      margin-bottom: 10px
+    }
+
+    .workflow {
+      display: flex;
+      flex-direction: column;
+      gap: 6px
+    }
+
+    .wf-step {
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .wf-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9.5px;
+      font-weight: 700;
+      flex-shrink: 0
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: auto;
+      padding-top: 20px
+    }
+
+    .btn-reject {
+      flex: 1;
+      background: #F8717118;
+      color: var(--red);
+      border: 1px solid #F8717130;
+      border-radius: 10px;
+      padding: 12px 0;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all .15s
+    }
+
+    .btn-reject:hover {
+      background: #F8717128
+    }
+
+    .btn-approve {
+      flex: 2;
+      background: var(--green);
+      color: #052e16;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 0;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all .15s
+    }
+
+    .btn-approve:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px)
+    }
+
+    /* ── Modal ── */
+    .modal-bg {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, .8);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      animation: fadeIn .15s
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0
+      }
+
+      to {
+        opacity: 1
+      }
+    }
+
+    .modal {
+      width: 460px;
+      max-height: 90%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 26px;
+      overflow-y: auto;
+      animation: modalIn .2s ease
+    }
+
+    @keyframes modalIn {
+      from {
+        transform: scale(.96);
+        opacity: 0
+      }
+
+      to {
+        transform: scale(1);
+        opacity: 1
+      }
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px
+    }
+
+    .mod-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 18px
+    }
+
+    .chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 11px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--t3);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all .15s
+    }
+
+    .chip:hover {
+      border-color: var(--border-h);
+      color: var(--t2)
+    }
+
+    .form-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--t3);
+      letter-spacing: .08em;
+      margin-bottom: 6px;
+      display: block
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 10px 13px;
+      color: var(--t1);
+      font-size: 13px;
+      outline: none;
+      font-family: inherit;
+      margin-bottom: 14px;
+      transition: border-color .15s
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      border-color: var(--accent)
+    }
+
+    .form-textarea {
+      resize: vertical
+    }
+
+    .submit-btn {
+      width: 100%;
+      background: #E11B36;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 13px 0;
+      font-weight: 700;
+      font-size: 13.5px;
+      cursor: pointer;
+      font-family: inherit;
+      margin-top: 4px;
+      transition: transform .15s, box-shadow .15s
+    }
+
+    .submit-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px var(--accent-g)
+    }
+
+    .toast {
+      position: absolute;
+      bottom: 22px;
+      right: 22px;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 30;
+      animation: toastIn .25s ease
+    }
+
+    @keyframes toastIn {
+      from {
+        transform: translateY(10px);
+        opacity: 0
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="app" id="app">
+    <div class="sidebar">
+      <div class="logo">
+        <div class="logo-title">
+          <img src="https://fundednext-production-bucket.s3.ap-northeast-1.amazonaws.com/fundednext/nv_logo.svg" alt="NEXT Ventures" style="height:26px;width:auto">
+        </div>
+        <div class="logo-sub">INTERNAL OPERATIONS · v1.0</div>
+      </div>
+      <div class="mod-list">
+        <div class="mod-label">MODULES</div>
+        <div id="sidebar-mods"></div>
+      </div>
+      <div class="new-btn-wrap"><button class="new-btn" onclick="openNew()">+ New Request</button></div>
+    </div>
+    <div class="main">
+      <div class="header">
+        <div>
+          <div class="header-title" id="h-title">All Requests</div>
+          <div class="header-sub" id="h-sub"></div>
+        </div>
+        <div class="tabs">
+          <button class="tab active" onclick="setTab('all',this)">All</button>
+          <button class="tab" onclick="setTab('pending',this)">Pending</button>
+          <button class="tab" onclick="setTab('mine',this)">Mine</button>
+        </div>
+      </div>
+      <div class="stats" id="stats-row"></div>
+      <div class="list" id="req-list"></div>
+      <div id="detail-panel" style="display:none"></div>
+      <div id="new-modal" style="display:none;position:absolute;inset:0;z-index:20"></div>
+      <div id="toast" class="toast" style="display:none"></div>
+    </div>
+  </div>
+
+  <script>
+    const MODS = {
+      leave: { label: "Leave", icon: "🏖", color: "#818CF8", fields: [{ k: "type", l: "Leave Type", t: "select", o: ["Annual", "Casual", "Sick", "Emergency", "Unpaid"] }, { k: "from", l: "From", t: "date" }, { k: "to", l: "To", t: "date" }, { k: "reason", l: "Reason", t: "textarea" }] },
+      wfh: { label: "Work From Home", icon: "🏠", color: "#34D399", fields: [{ k: "from", l: "From", t: "date" }, { k: "to", l: "To", t: "date" }, { k: "tasks", l: "Task Plan", t: "textarea" }] },
+      overtime: { label: "Overtime", icon: "⏱", color: "#FBBF24", fields: [{ k: "date", l: "Date", t: "date" }, { k: "hours", l: "Hours", t: "number" }, { k: "project", l: "Project", t: "text" }] },
+      loan: { label: "Salary Advance", icon: "💳", color: "#F472B6", fields: [{ k: "amount", l: "Amount (BDT)", t: "number" }, { k: "months", l: "Repay in (months)", t: "number" }, { k: "reason", l: "Purpose", t: "textarea" }] },
+      expense: { label: "Expense", icon: "🧾", color: "#2DD4BF", fields: [{ k: "amount", l: "Amount (BDT)", t: "number" }, { k: "cat", l: "Category", t: "select", o: ["Travel", "Meals", "Supplies", "Training", "Other"] }, { k: "receipt", l: "Receipt No.", t: "text" }, { k: "notes", l: "Notes", t: "textarea" }] },
+      it_asset: { label: "IT Asset", icon: "💻", color: "#A78BFA", fields: [{ k: "asset", l: "Asset", t: "select", o: ["Laptop", "Monitor", "Keyboard", "Mouse", "Headset", "Other"] }, { k: "reason", l: "Justification", t: "textarea" }] },
+      travel: { label: "Travel", icon: "✈️", color: "#FB923C", fields: [{ k: "dest", l: "Destination", t: "text" }, { k: "dep", l: "Departure", t: "date" }, { k: "ret", l: "Return", t: "date" }, { k: "purpose", l: "Purpose", t: "textarea" }] },
+      manpower: { label: "Manpower", icon: "👥", color: "#60A5FA", fields: [{ k: "role", l: "Role", t: "text" }, { k: "dept", l: "Department", t: "text" }, { k: "count", l: "Headcount", t: "number" }, { k: "reason", l: "Justification", t: "textarea" }] },
+      training: { label: "Training", icon: "📚", color: "#86EFAC", fields: [{ k: "course", l: "Course / Program", t: "text" }, { k: "provider", l: "Provider", t: "text" }, { k: "cost", l: "Cost (BDT)", t: "number" }, { k: "date", l: "Start Date", t: "date" }] },
+      resign: { label: "Resignation", icon: "🚪", color: "#F87171", fields: [{ k: "last_day", l: "Last Working Day", t: "date" }, { k: "reason", l: "Reason (optional)", t: "textarea" }] },
+      salary_cert: { label: "Salary Certificate", icon: "📋", color: "#38BDF8", fields: [{ k: "purpose", l: "Purpose", t: "select", o: ["Bank Loan", "Visa Application", "Rental Agreement", "Other"] }, { k: "addressed_to", l: "Addressed To", t: "text" }, { k: "notes", l: "Additional Notes", t: "textarea" }] },
+      insurance: { label: "Insurance", icon: "🏥", color: "#E879F9", fields: [{ k: "type", l: "Request Type", t: "select", o: ["Enrollment", "Claim", "Add Dependent", "Update Info"] }, { k: "details", l: "Details", t: "textarea" }] },
+      confirmation: { label: "Confirmation", icon: "✅", color: "#4ADE80", fields: [{ k: "type", l: "Confirmation Type", t: "select", o: ["Standard", "Early Confirmation"] }, { k: "join_date", l: "Joining Date", t: "date" }, { k: "manager_remarks", l: "Manager Remarks", t: "textarea" }] },
+      attendance: { label: "Attendance", icon: "🕐", color: "#94A3B8", fields: [{ k: "date", l: "Date", t: "date" }, { k: "type", l: "Correction Type", t: "select", o: ["Missed Check-in", "Missed Check-out", "Wrong Entry", "On-site Duty"] }, { k: "reason", l: "Reason", t: "textarea" }] },
+      lunch: { label: "Lunch Order", icon: "🍽", color: "#FB7185", fields: [{ k: "date", l: "Date", t: "date" }, { k: "meal", l: "Meal Preference", t: "select", o: ["Standard", "Vegetarian", "Diet", "No Meal"] }, { k: "cost", l: "Cost (BDT)", t: "number" }, { k: "order_link", l: "Order Link (if online)", t: "text" }, { k: "description", l: "Description", t: "textarea" }] },
+      id_card: { label: "ID Card", icon: "🪪", color: "#FACC15", fields: [{ k: "type", l: "Request Type", t: "select", o: ["New Issuance", "Re-issuance (Lost)", "Re-issuance (Damaged)", "Name/Photo Update"] }, { k: "reason", l: "Reason", t: "textarea" }] },
+      referral: { label: "Referral", icon: "🔗", color: "#C084FC", fields: [{ k: "candidate", l: "Candidate Name", t: "text" }, { k: "position", l: "Position", t: "text" }, { k: "resume", l: "Resume Link", t: "text" }, { k: "relation", l: "Relationship", t: "textarea" }] },
+    };
+    const ST = { pending: { label: "Pending", bg: "rgba(251,191,36,.12)", color: "#FBBF24" }, approved: { label: "Approved", bg: "rgba(52,211,153,.12)", color: "#34D399" }, rejected: { label: "Rejected", bg: "rgba(248,113,113,.12)", color: "#F87171" } };
+
+    let requests = [
+      { id: 1, module: "leave", requester: "Nadia Rahman", dept: "HR", status: "pending", date: "2026-03-28", data: { type: "Sick", from: "2026-04-03", to: "2026-04-04", reason: "Fever and fatigue" } },
+      { id: 2, module: "wfh", requester: "Tanvir Islam", dept: "Engineering", status: "approved", date: "2026-03-27", data: { from: "2026-04-01", to: "2026-04-03", tasks: "API integration sprint" } },
+      { id: 3, module: "overtime", requester: "Priya Sen", dept: "Finance", status: "pending", date: "2026-03-26", data: { date: "2026-03-30", hours: "3", project: "Q1 Audit" } },
+      { id: 4, module: "loan", requester: "Mahbub Alam", dept: "Operations", status: "rejected", date: "2026-03-25", data: { amount: "50000", months: "6", reason: "Medical emergency" } },
+      { id: 5, module: "it_asset", requester: "Sadia Khanam", dept: "Engineering", status: "approved", date: "2026-03-24", data: { asset: "Monitor", reason: "Dual screen for dev work" } },
+      { id: 6, module: "travel", requester: "Rahim Chowdhury", dept: "Sales", status: "pending", date: "2026-03-23", data: { dest: "Chittagong", dep: "2026-04-05", ret: "2026-04-07", purpose: "Client meeting" } },
+      { id: 7, module: "expense", requester: "Farida Begum", dept: "Marketing", status: "approved", date: "2026-03-22", data: { amount: "12500", cat: "Travel", receipt: "RC-089", notes: "Dhaka-Sylhet visit" } },
+      { id: 8, module: "training", requester: "Imran Hossain", dept: "Engineering", status: "pending", date: "2026-03-21", data: { course: "AWS Solutions Architect", provider: "Coursera", cost: "15000", date: "2026-04-15" } },
+      { id: 9, module: "salary_cert", requester: "Ayesha Siddiqua", dept: "Finance", status: "approved", date: "2026-03-20", data: { purpose: "Bank Loan", addressed_to: "HSBC Bangladesh", notes: "Need within 3 business days" } },
+      { id: 10, module: "insurance", requester: "Kamal Hasan", dept: "Operations", status: "pending", date: "2026-03-19", data: { type: "Add Dependent", details: "Adding spouse — recently married" } },
+      { id: 11, module: "confirmation", requester: "Ritu Sharma", dept: "Marketing", status: "approved", date: "2026-03-18", data: { type: "Standard", join_date: "2025-09-15", manager_remarks: "Excellent performance during probation" } },
+      { id: 12, module: "attendance", requester: "Zahid Reza", dept: "Engineering", status: "pending", date: "2026-03-17", data: { date: "2026-03-16", type: "Missed Check-in", reason: "Badge reader malfunction at gate B" } },
+      { id: 13, module: "lunch", requester: "Meher Afroz", dept: "HR", status: "approved", date: "2026-03-16", data: { date: "2026-03-17", meal: "Vegetarian", cost: "250", order_link: "foodpanda.com.bd/order/28374", description: "No onion/garlic please" } },
+      { id: 14, module: "id_card", requester: "Arif Mahmud", dept: "Sales", status: "pending", date: "2026-03-15", data: { type: "Re-issuance (Lost)", reason: "Lost during client visit in Sylhet" } },
+      { id: 15, module: "referral", requester: "Tanvir Islam", dept: "Engineering", status: "approved", date: "2026-03-14", data: { candidate: "Shakib Al Hasan", position: "Senior Frontend Engineer", resume: "drive.google.com/shakib-cv", relation: "Former colleague at previous company" } },
+    ];
+    let activeMod = "all", activeTab = "all", newModKey = "leave", formVals = {};
+
+    function bdg(s) { const st = ST[s]; return `<span class="badge" style="background:${st.bg};color:${st.color}"><span class="badge-dot" style="background:${st.color}"></span>${st.label}</span>`; }
+
+    function renderSidebar() {
+      const entries = [{ key: "all", label: "All Requests", icon: "≡", color: "#6B7280" }, ...Object.entries(MODS).map(([k, v]) => ({ key: k, ...v }))];
+      document.getElementById("sidebar-mods").innerHTML = entries.map(m => {
+        const cnt = requests.filter(r => r.module === m.key && r.status === "pending").length;
+        return `<button class="mod-btn ${activeMod === m.key ? 'active' : ''}" onclick="setMod('${m.key}')"><span class="mod-icon">${m.icon}</span><span class="mod-name">${m.label}</span>${cnt > 0 && m.key !== "all" ? `<span class="mod-badge" style="background:${m.color}22;color:${m.color}">${cnt}</span>` : ""}</button>`;
+      }).join("");
+    }
+
+    function renderStats() {
+      const t = requests.length, p = requests.filter(r => r.status === "pending").length, a = requests.filter(r => r.status === "approved").length, m = Object.keys(MODS).length;
+      document.getElementById("stats-row").innerHTML = `
+    <div class="stat"><div class="stat-label">TOTAL REQUESTS</div><div class="stat-val" style="color:var(--t1)">${t}</div></div>
+    <div class="stat"><div class="stat-label">PENDING</div><div class="stat-val" style="color:var(--yellow)">${p}</div></div>
+    <div class="stat"><div class="stat-label">APPROVED</div><div class="stat-val" style="color:var(--green)">${a}</div></div>
+    <div class="stat"><div class="stat-label">MODULES</div><div class="stat-val" style="color:var(--accent-l)">${m}</div></div>`;
+    }
+
+    function renderList() {
+      const filtered = requests.filter(r => { if (activeMod !== "all" && r.module !== activeMod) return false; if (activeTab === "pending") return r.status === "pending"; if (activeTab === "mine") return r.requester === "You"; return true; });
+      const m = activeMod !== "all" ? MODS[activeMod] : null;
+      document.getElementById("h-title").textContent = m ? m.label : "All Requests";
+      document.getElementById("h-sub").textContent = m ? `${requests.filter(r => r.module === activeMod).length} requests` : `${requests.length} total · ${requests.filter(r => r.status === "pending").length} pending`;
+      document.getElementById("req-list").innerHTML = filtered.length === 0
+        ? `<div style="text-align:center;padding:80px 0;color:var(--t3)"><div style="font-size:36px;margin-bottom:14px">✓</div><div style="font-weight:600;font-size:14px">No requests here</div></div>`
+        : filtered.map(r => { const mod = MODS[r.module]; return `<div class="req-row" onclick="openDetail(${r.id})"><div class="req-mod-icon" style="background:${mod.color}18">${mod.icon}</div><div class="req-info"><div class="req-name">${mod.label}</div><div class="req-meta">${r.requester} · ${r.dept} · ${r.date}</div></div>${bdg(r.status)}<span class="chevron">›</span></div>`; }).join("");
+    }
+
+    function openDetail(id) {
+      const r = requests.find(x => x.id === id), m = MODS[r.module], steps = ["Submitted", "Line Manager", "HR / Finance", "Done"], doneIdx = r.status === "approved" ? 4 : r.status === "rejected" ? 1 : 1;
+      const p = document.getElementById("detail-panel"); p.style.display = "block";
+      p.innerHTML = `<div class="panel"><div class="panel-head"><div class="panel-mod"><div class="panel-mod-icon" style="background:${m.color}18">${m.icon}</div><div><div style="font-weight:700;font-size:16px;color:#fff">${m.label} Request</div><div style="font-size:11px;color:var(--t3);margin-top:2px">#${r.id} · ${r.date}</div></div></div><button class="panel-close" onclick="closeDetail()">✕</button></div>${bdg(r.status)}<div class="info-block" style="margin-top:16px"><div class="info-label">REQUESTER</div><div style="font-weight:600;color:#E0E0EE;font-size:14px">${r.requester}</div><div style="font-size:12px;color:var(--t3);margin-top:3px">${r.dept}</div></div><div class="info-block"><div class="info-label">REQUEST DETAILS</div>${Object.entries(r.data).map(([k, v]) => `<div><div class="field-key">${k.replace(/_/g, " ")}</div><div class="field-val">${v}</div></div>`).join("")}</div><div class="info-block"><div class="info-label">WORKFLOW</div><div class="workflow">${steps.map((s, i) => `<div class="wf-step"><div class="wf-dot" style="background:${i < doneIdx ? m.color : "var(--border)"};color:${i < doneIdx ? "#000" : "var(--t3)"}">${i + 1}</div><div style="font-size:13px;color:${i < doneIdx ? "#C8C8E0" : "var(--t3)"}">${s}</div></div>`).join("")}</div></div>${r.status === "pending" ? `<div class="actions"><button class="btn-reject" onclick="act(${r.id},'rejected')">Reject</button><button class="btn-approve" onclick="act(${r.id},'approved')">Approve ✓</button></div>` : ""}</div>`;
+    }
+
+    function closeDetail() { document.getElementById("detail-panel").style.display = "none"; }
+    function act(id, status) { requests = requests.map(r => r.id === id ? { ...r, status } : r); closeDetail(); renderAll(); fire(status === "approved" ? "Request approved ✓" : "Request rejected", status === "approved"); }
+
+    function openNew() { newModKey = "leave"; formVals = {}; renderModal(); document.getElementById("new-modal").style.display = "block"; }
+    function renderModal() {
+      const m = MODS[newModKey];
+      const chips = Object.entries(MODS).map(([k, v]) => `<button class="chip" style="${newModKey === k ? `border-color:${v.color};background:${v.color}18;color:${v.color}` : ""}" onclick="setNewMod('${k}')">${v.icon} ${v.label}</button>`).join("");
+      const fields = m.fields.map(f => { const val = formVals[f.k] || ""; if (f.t === "select") return `<label class="form-label">${f.l}</label><select class="form-select" onchange="formVals['${f.k}']=this.value"><option value="">Select…</option>${f.o.map(o => `<option ${val === o ? "selected" : ""}>${o}</option>`).join("")}</select>`; if (f.t === "textarea") return `<label class="form-label">${f.l}</label><textarea class="form-textarea" rows="2" oninput="formVals['${f.k}']=this.value">${val}</textarea>`; return `<label class="form-label">${f.l}</label><input type="${f.t}" class="form-input" value="${val}" oninput="formVals['${f.k}']=this.value"/>`; }).join("");
+      document.getElementById("new-modal").innerHTML = `<div class="modal-bg" onclick="closeNew()"><div class="modal" onclick="event.stopPropagation()"><div class="modal-head"><div style="font-weight:700;font-size:17px;color:#fff">New Request</div><button onclick="closeNew()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer">✕</button></div><div style="font-size:10px;font-weight:700;color:var(--t3);letter-spacing:.12em;margin-bottom:8px">SELECT MODULE</div><div class="mod-chips">${chips}</div><div style="font-size:10px;font-weight:700;color:var(--t3);letter-spacing:.12em;margin-bottom:10px">DETAILS</div>${fields}<button class="submit-btn" onclick="submitNew()">Submit Request</button></div></div>`;
+    }
+    function setNewMod(k) { newModKey = k; formVals = {}; renderModal(); }
+    function closeNew() { document.getElementById("new-modal").style.display = "none"; }
+    function submitNew() { const m = MODS[newModKey]; requests.unshift({ id: Date.now(), module: newModKey, requester: "You", dept: "Engineering", status: "pending", date: new Date().toISOString().slice(0, 10), data: formVals }); closeNew(); renderAll(); fire(`${m.label} request submitted ✓`, true); }
+    function setMod(k) { activeMod = k; renderAll(); }
+    function setTab(t, btn) { activeTab = t; document.querySelectorAll(".tab").forEach(b => b.classList.remove("active")); btn.classList.add("active"); renderList(); }
+    function fire(msg, ok = true) { const t = document.getElementById("toast"); t.textContent = msg; t.style.display = "block"; t.style.background = ok ? "#052e16" : "#2d0707"; t.style.border = `1px solid ${ok ? "#34D39940" : "#F8717140"}`; t.style.color = ok ? "var(--green)" : "var(--red)"; setTimeout(() => t.style.display = "none", 2800); }
+    function renderAll() { renderSidebar(); renderStats(); renderList(); }
+    renderAll();
+  </script>
+</body>
+
+</html>
