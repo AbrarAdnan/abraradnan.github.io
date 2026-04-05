@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEXT Ventures — My Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/nv_platform.css">
+  <script src="assets/js/nv_data.js"></script>
+</head>
+<body>
+  <div class="nv-app">
+    <!-- Sidebar -->
+    <div class="nv-sidebar">
+      <div class="nv-logo">
+        <img src="https://fundednext-production-bucket.s3.ap-northeast-1.amazonaws.com/fundednext/nv_logo.svg" alt="NEXT Ventures">
+        <div class="nv-logo-sub">INTERNAL OPERATIONS · v2.0</div>
+      </div>
+      <div class="nv-nav">
+        <div class="nv-nav-label">NAVIGATION</div>
+        <button class="nv-nav-item active" onclick="setView('dashboard',this)" id="nav-dashboard">
+          <span class="nv-nav-icon">📊</span><span class="nv-nav-text">My Dashboard</span>
+        </button>
+        <button class="nv-nav-item" onclick="setView('requests',this)" id="nav-requests">
+          <span class="nv-nav-icon">📋</span><span class="nv-nav-text">My Requests</span>
+          <span class="nv-nav-badge" id="nav-pending-badge" style="display:none"></span>
+        </button>
+        <div class="nv-nav-divider"></div>
+        <button class="nv-nav-item" onclick="openNewModal()" id="nav-new">
+          <span class="nv-nav-icon">➕</span><span class="nv-nav-text">New Request</span>
+        </button>
+      </div>
+      <div class="nv-user-block" id="user-block"></div>
+      <div class="nv-footer"><a href="next_ventures.html">← Switch Role</a></div>
+    </div>
+
+    <!-- Main -->
+    <div class="nv-main">
+      <div class="nv-header">
+        <div>
+          <div class="nv-header-title" id="h-title">My Dashboard</div>
+          <div class="nv-header-sub" id="h-sub"></div>
+        </div>
+        <div class="nv-tabs" id="filter-tabs" style="display:none">
+          <button class="nv-tab active" onclick="setFilter('all',this)">All</button>
+          <button class="nv-tab" onclick="setFilter('in_progress',this)">In Progress</button>
+          <button class="nv-tab" onclick="setFilter('completed',this)">Completed</button>
+          <button class="nv-tab" onclick="setFilter('returned',this)">Returned</button>
+        </div>
+      </div>
+
+      <div class="nv-stats nv-stagger" id="stats-row"></div>
+
+      <div class="nv-content" id="main-content">
+        <!-- Dashboard View -->
+        <div class="nv-view active" id="view-dashboard"></div>
+        <!-- Requests View -->
+        <div class="nv-view" id="view-requests"></div>
+      </div>
+
+      <!-- Detail Panel -->
+      <div id="detail-panel" style="display:none"></div>
+      <!-- New Request Modal -->
+      <div id="new-modal" style="display:none;position:absolute;inset:0;z-index:20"></div>
+    </div>
+  </div>
+
+  <script>
+    // ── Init ──
+    const deptKey = NV.getParam('dept') || 'technology';
+    const userKey = NV.getParam('user') || NV.getDefaultEmployee(deptKey) || 'tanvir';
+    const currentUser = NV.USERS[userKey];
+    const currentDept = NV.DEPTS[deptKey];
+    let activeView = 'dashboard';
+    let activeFilter = 'all';
+    let newModKey = 'leave';
+    let formVals = {};
+
+    function myRequests() {
+      return NV.requestsByUser(userKey);
+    }
+
+    function filteredRequests() {
+      let reqs = myRequests();
+      if (activeFilter === 'in_progress') reqs = reqs.filter(r => ['submitted','dept_approved'].includes(r.status));
+      else if (activeFilter === 'completed') reqs = reqs.filter(r => r.status === 'pc_approved');
+      else if (activeFilter === 'returned') reqs = reqs.filter(r => ['dept_rejected','pc_rejected'].includes(r.status));
+      return reqs;
+    }
+
+    // ── User Block ──
+    function renderUserBlock() {
+      document.getElementById('user-block').innerHTML = `
+        <div class="nv-user-info">
+          <div class="nv-user-avatar" style="background:${currentDept.color}">${NV.initials(currentUser.name)}</div>
+          <div>
+            <div class="nv-user-name">${currentUser.name}</div>
+            <div class="nv-user-title">${currentDept.name}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ── Stats ──
+    function renderStats() {
+      const reqs = myRequests();
+      const total = reqs.length;
+      const inProgress = reqs.filter(r => ['submitted','dept_approved'].includes(r.status)).length;
+      const completed = reqs.filter(r => r.status === 'pc_approved').length;
+      const returned = reqs.filter(r => ['dept_rejected','pc_rejected'].includes(r.status)).length;
+
+      document.getElementById('stats-row').innerHTML = `
+        <div class="nv-stat"><div class="nv-stat-label">TOTAL REQUESTS</div><div class="nv-stat-value" style="color:var(--t1)">${total}</div></div>
+        <div class="nv-stat"><div class="nv-stat-label">IN PROGRESS</div><div class="nv-stat-value" style="color:var(--yellow)">${inProgress}</div><div class="nv-stat-sub">${reqs.filter(r=>r.status==='submitted').length} awaiting dept head · ${reqs.filter(r=>r.status==='dept_approved').length} at P&C</div></div>
+        <div class="nv-stat"><div class="nv-stat-label">COMPLETED</div><div class="nv-stat-value" style="color:var(--green)">${completed}</div></div>
+        <div class="nv-stat"><div class="nv-stat-label">RETURNED</div><div class="nv-stat-value" style="color:${returned > 0 ? 'var(--red)' : 'var(--t3)'}">${returned}</div></div>
+      `;
+
+      // Update nav badge
+      const badge = document.getElementById('nav-pending-badge');
+      if (inProgress > 0) { badge.style.display = ''; badge.textContent = inProgress; }
+      else { badge.style.display = 'none'; }
+    }
+
+    // ── Dashboard View ──
+    function renderDashboard() {
+      const reqs = myRequests().sort((a,b) => b.createdDate.localeCompare(a.createdDate));
+      const recent = reqs.slice(0, 5);
+
+      let html = '<div class="nv-section-label">RECENT REQUESTS</div>';
+      if (recent.length === 0) {
+        html += `<div class="nv-empty"><div class="nv-empty-icon">📋</div><div class="nv-empty-text">No requests yet</div><div class="nv-empty-sub">Submit your first request using the sidebar</div></div>`;
+      } else {
+        html += recent.map(r => reqRowHTML(r)).join('');
+      }
+
+      // Quick tip
+      html += `<div style="margin-top:24px;padding:16px 20px;background:var(--card);border:1px solid var(--border);border-radius:12px">
+        <div style="font-size:10px;font-weight:700;color:var(--t3);letter-spacing:.12em;margin-bottom:8px">HOW IT WORKS</div>
+        <div style="display:flex;gap:24px">
+          <div style="flex:1"><div style="font-size:20px;margin-bottom:6px">1️⃣</div><div style="font-size:12px;color:var(--t2)">You submit a request</div></div>
+          <div style="flex:1"><div style="font-size:20px;margin-bottom:6px">2️⃣</div><div style="font-size:12px;color:var(--t2)">Dept. head reviews & approves</div></div>
+          <div style="flex:1"><div style="font-size:20px;margin-bottom:6px">3️⃣</div><div style="font-size:12px;color:var(--t2)">People & Culture gives final approval</div></div>
+          <div style="flex:1"><div style="font-size:20px;margin-bottom:6px">✅</div><div style="font-size:12px;color:var(--t2)">Request completed</div></div>
+        </div>
+      </div>`;
+
+      document.getElementById('view-dashboard').innerHTML = html;
+    }
+
+    // ── Requests View ──
+    function renderRequests() {
+      const reqs = filteredRequests().sort((a,b) => b.createdDate.localeCompare(a.createdDate));
+      let html = '';
+      if (reqs.length === 0) {
+        html = `<div class="nv-empty"><div class="nv-empty-icon">✓</div><div class="nv-empty-text">No requests here</div><div class="nv-empty-sub">All clear in this category</div></div>`;
+      } else {
+        html = reqs.map(r => reqRowHTML(r)).join('');
+      }
+      document.getElementById('view-requests').innerHTML = html;
+    }
+
+    function reqRowHTML(r) {
+      const mod = NV.MODS[r.module];
+      const user = NV.USERS[r.requester];
+      return `<div class="nv-req-row" onclick="openDetail(${r.id})">
+        <div class="nv-req-icon" style="background:${mod.color}18">${mod.icon}</div>
+        <div class="nv-req-info">
+          <div class="nv-req-name">${mod.label}</div>
+          <div class="nv-req-meta">${NV.fmtDate(r.createdDate)} · ${NV.timeAgo(r.createdDate)}</div>
+        </div>
+        ${NV.badge(r.status)}
+        <span class="nv-req-chevron">›</span>
+      </div>`;
+    }
+
+    // ── Detail Panel ──
+    function openDetail(id) {
+      const r = NV.requests.find(x => x.id === id);
+      if (!r) return;
+      const mod = NV.MODS[r.module];
+      const p = document.getElementById('detail-panel');
+      p.style.display = 'block';
+      p.innerHTML = `<div class="nv-panel">
+        <div class="nv-panel-head">
+          <div class="nv-panel-mod">
+            <div class="nv-panel-mod-icon" style="background:${mod.color}18">${mod.icon}</div>
+            <div>
+              <div class="nv-panel-title">${mod.label} Request</div>
+              <div class="nv-panel-meta">#${r.id} · ${NV.fmtDate(r.createdDate)}</div>
+            </div>
+          </div>
+          <button class="nv-close-btn" onclick="closeDetail()">✕</button>
+        </div>
+        ${NV.badge(r.status)}
+        <div class="nv-info-block" style="margin-top:16px">
+          <div class="nv-info-label">APPROVAL PIPELINE</div>
+          ${NV.pipelineHTML(r)}
+        </div>
+        <div class="nv-info-block">
+          <div class="nv-info-label">REQUEST DETAILS</div>
+          ${Object.entries(r.data).map(([k,v]) => `<div><div class="nv-field-key">${k.replace(/_/g,' ')}</div><div class="nv-field-val">${v}</div></div>`).join('')}
+        </div>
+        <div class="nv-info-block">
+          <div class="nv-info-label">AUDIT TRAIL</div>
+          ${NV.auditHTML(r)}
+        </div>
+      </div>`;
+    }
+
+    function closeDetail() {
+      document.getElementById('detail-panel').style.display = 'none';
+    }
+
+    // ── New Request Modal ──
+    function openNewModal() {
+      newModKey = 'leave';
+      formVals = {};
+      renderModal();
+      document.getElementById('new-modal').style.display = 'block';
+    }
+
+    function renderModal() {
+      const m = NV.MODS[newModKey];
+      const chips = Object.entries(NV.MODS).map(([k,v]) =>
+        `<button class="nv-chip" style="${newModKey===k ? `border-color:${v.color};background:${v.color}18;color:${v.color}` : ''}" onclick="setNewMod('${k}')">${v.icon} ${v.label}</button>`
+      ).join('');
+      const fields = m.fields.map(f => {
+        const val = formVals[f.k] || '';
+        const required = '<span style="color:var(--red);margin-left:4px">*</span>';
+        if (f.t === 'select') return `<label class="nv-form-label">${f.l}${required}</label><select class="nv-form-select" onchange="formVals['${f.k}']=this.value"><option value="">Select…</option>${f.o.map(o=>`<option ${val===o?'selected':''}>${o}</option>`).join('')}</select>`;
+        if (f.t === 'textarea') return `<label class="nv-form-label">${f.l}${required}</label><textarea class="nv-form-textarea" rows="2" oninput="formVals['${f.k}']=this.value">${val}</textarea>`;
+        return `<label class="nv-form-label">${f.l}${required}</label><input type="${f.t}" class="nv-form-input" value="${val}" oninput="formVals['${f.k}']=this.value"/>`;
+      }).join('');
+
+      document.getElementById('new-modal').innerHTML = `
+        <div class="nv-modal-bg" onclick="closeModal()">
+          <div class="nv-modal" onclick="event.stopPropagation()">
+            <div class="nv-modal-head">
+              <div class="nv-modal-title">New Request</div>
+              <button class="nv-close-btn" onclick="closeModal()">✕</button>
+            </div>
+            <div style="font-size:10px;font-weight:700;color:var(--t3);letter-spacing:.12em;margin-bottom:8px">SELECT MODULE</div>
+            <div class="nv-chips">${chips}</div>
+            <div style="font-size:10px;font-weight:700;color:var(--t3);letter-spacing:.12em;margin-bottom:10px">DETAILS</div>
+            ${fields}
+            <button class="nv-btn nv-btn-primary" style="width:100%;margin-top:4px" onclick="submitNew()">Submit Request</button>
+          </div>
+        </div>`;
+    }
+
+    function setNewMod(k) { newModKey = k; formVals = {}; renderModal(); }
+    function closeModal() { document.getElementById('new-modal').style.display = 'none'; }
+
+    function submitNew() {
+      const m = NV.MODS[newModKey];
+      
+      // 1. Check all required fields
+      for (const f of m.fields) {
+        if (!formVals[f.k] || formVals[f.k].trim() === '') {
+          NV.toast(`Please fill in: ${f.l}`, false);
+          return;
+        }
+      }
+
+      // 2. Specific Date Validation (Leave / WFH / etc)
+      if (formVals.from && formVals.to) {
+        const d1 = new Date(formVals.from);
+        const d2 = new Date(formVals.to);
+        if (d1 > d2) {
+          NV.toast(`Start date cannot be after end date`, false);
+          return;
+        }
+      }
+
+      NV.requests.unshift({
+        id: Date.now(), module: newModKey, requester: userKey,
+        status: 'submitted', createdDate: new Date().toISOString().slice(0,10),
+        data: { ...formVals },
+        audit: [{ action: 'submitted', by: userKey, date: new Date().toISOString().slice(0,16).replace('T',' '), comment: '' }]
+      });
+      closeModal();
+      renderAll();
+      NV.toast(`${m.label} request submitted ✓`);
+    }
+
+    // ── View Switching ──
+    function setView(view, btn) {
+      activeView = view;
+      document.querySelectorAll('.nv-nav-item').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      document.querySelectorAll('.nv-view').forEach(v => v.classList.remove('active'));
+      document.getElementById(`view-${view}`).classList.add('active');
+
+      const tabs = document.getElementById('filter-tabs');
+      tabs.style.display = view === 'requests' ? 'flex' : 'none';
+
+      const titles = { dashboard: 'My Dashboard', requests: 'My Requests' };
+      document.getElementById('h-title').textContent = titles[view] || 'Dashboard';
+
+      if (view === 'dashboard') renderDashboard();
+      else if (view === 'requests') renderRequests();
+      updateSubtitle();
+    }
+
+    function setFilter(f, btn) {
+      activeFilter = f;
+      document.querySelectorAll('.nv-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderRequests();
+    }
+
+    function updateSubtitle() {
+      const reqs = myRequests();
+      const sub = document.getElementById('h-sub');
+      if (activeView === 'dashboard') {
+        sub.textContent = `${currentUser.name} · ${currentDept.name}`;
+      } else {
+        sub.textContent = `${reqs.length} total · ${reqs.filter(r=>['submitted','dept_approved'].includes(r.status)).length} in progress`;
+      }
+    }
+
+    function renderAll() {
+      renderStats();
+      renderDashboard();
+      renderRequests();
+      renderUserBlock();
+      updateSubtitle();
+    }
+
+    renderAll();
+  </script>
+</body>
+</html>

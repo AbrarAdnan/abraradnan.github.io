@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEXT Ventures — People & Culture Administration</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/nv_platform.css">
+  <script src="assets/js/nv_data.js"></script>
+  <style>
+    .approval-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 18px 20px; margin-bottom: 10px; transition: all .2s;
+    }
+    .approval-card:hover { border-color: var(--border-h); }
+    .approval-top { display: flex; align-items: center; gap: 14px; }
+    .approval-info { flex: 1; min-width: 0; }
+    .approval-name { font-weight: 600; font-size: 14px; color: var(--t1); }
+    .approval-meta { font-size: 11px; color: var(--t3); margin-top: 3px; }
+    .approval-dept-tag { font-size: 9px; font-weight: 700; border-radius: 6px; padding: 2px 8px; margin-left: 8px; }
+    .approval-expand { color: var(--t3); cursor: pointer; font-size: 14px; padding: 6px 10px; border-radius: 8px; background: none; border: none; font-family: inherit; transition: all .15s; }
+    .approval-expand:hover { background: var(--card-hover); color: var(--t2); }
+    .approval-details { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); display: none; animation: nvFadeIn .2s ease; }
+    .approval-details.open { display: block; }
+    .approval-actions { display: flex; gap: 8px; margin-top: 14px; }
+    .approval-actions .nv-btn { flex: 1; padding: 10px 0; font-size: 12.5px; }
+    .comment-box { margin-top: 12px; animation: nvFadeIn .2s ease; }
+    .comment-box textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 9px; padding: 10px 14px; color: var(--t1); font-size: 13px; outline: none; font-family: inherit; resize: vertical; margin-bottom: 8px; transition: border-color .15s; }
+    .comment-box textarea:focus { border-color: var(--accent); }
+    .comment-box textarea.error { border-color: var(--red); }
+    .comment-confirm { display: flex; gap: 8px; justify-content: flex-end; }
+    .comment-confirm .nv-btn { padding: 8px 20px; font-size: 12px; }
+    .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .analytics-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
+    .analytics-card-label { font-size: 10px; font-weight: 700; color: var(--t3); letter-spacing: .12em; margin-bottom: 12px; }
+    .big-metric { font-size: 36px; font-weight: 800; letter-spacing: -1px; }
+    .big-metric-label { font-size: 11px; color: var(--t3); margin-top: 4px; }
+    .audit-row {
+      display: flex; align-items: flex-start; gap: 12px; padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .audit-row:last-child { border-bottom: none; }
+    .audit-row-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+    .audit-row-content { flex: 1; }
+    .audit-row-action { font-size: 12.5px; font-weight: 600; color: var(--t1); }
+    .audit-row-meta { font-size: 10.5px; color: var(--t3); margin-top: 2px; }
+    .audit-row-comment { font-size: 11px; color: var(--t2); margin-top: 4px; font-style: italic; }
+    .dept-head-comment {
+      background: rgba(96,165,250,.06); border: 1px solid rgba(96,165,250,.15);
+      border-radius: 8px; padding: 10px 14px; margin-top: 10px;
+    }
+    .dept-head-comment-label { font-size: 9px; font-weight: 700; color: #60A5FA; letter-spacing: .1em; margin-bottom: 4px; }
+    .dept-head-comment-text { font-size: 12px; color: var(--t2); font-style: italic; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="nv-app">
+    <!-- Sidebar -->
+    <div class="nv-sidebar">
+      <div class="nv-logo">
+        <img src="https://fundednext-production-bucket.s3.ap-northeast-1.amazonaws.com/fundednext/nv_logo.svg" alt="NEXT Ventures">
+        <div class="nv-logo-sub">INTERNAL OPERATIONS · v2.0</div>
+      </div>
+      <div class="nv-nav">
+        <div class="nv-nav-label">PEOPLE & CULTURE</div>
+        <button class="nv-nav-item active" onclick="setView('overview',this)">
+          <span class="nv-nav-icon">📊</span><span class="nv-nav-text">Overview</span>
+        </button>
+        <button class="nv-nav-item" onclick="setView('queue',this)" id="nav-queue">
+          <span class="nv-nav-icon">📥</span><span class="nv-nav-text">Final Approval Queue</span>
+          <span class="nv-nav-badge" id="nav-queue-badge"></span>
+        </button>
+        <button class="nv-nav-item" onclick="setView('all_requests',this)">
+          <span class="nv-nav-icon">📋</span><span class="nv-nav-text">All Requests</span>
+        </button>
+        <div class="nv-nav-divider"></div>
+        <div class="nv-nav-label">ORGANIZATION</div>
+        <button class="nv-nav-item" onclick="setView('departments',this)">
+          <span class="nv-nav-icon">🏢</span><span class="nv-nav-text">Departments</span>
+        </button>
+        <button class="nv-nav-item" onclick="setView('analytics',this)">
+          <span class="nv-nav-icon">📈</span><span class="nv-nav-text">Analytics</span>
+        </button>
+        <button class="nv-nav-item" onclick="setView('audit',this)">
+          <span class="nv-nav-icon">📜</span><span class="nv-nav-text">Audit Trail</span>
+        </button>
+      </div>
+      <div class="nv-user-block" id="user-block"></div>
+      <div class="nv-footer"><a href="next_ventures.html">← Switch Role</a></div>
+    </div>
+
+    <!-- Main -->
+    <div class="nv-main">
+      <div class="nv-header">
+        <div>
+          <div class="nv-header-title" id="h-title">Overview</div>
+          <div class="nv-header-sub" id="h-sub"></div>
+        </div>
+        <div class="nv-tabs" id="filter-tabs" style="display:none">
+          <button class="nv-tab active" onclick="setAllFilter('all',this)">All</button>
+          <button class="nv-tab" onclick="setAllFilter('submitted',this)">Submitted</button>
+          <button class="nv-tab" onclick="setAllFilter('dept_approved',this)">Dept. Approved</button>
+          <button class="nv-tab" onclick="setAllFilter('completed',this)">Completed</button>
+          <button class="nv-tab" onclick="setAllFilter('returned',this)">Returned</button>
+        </div>
+      </div>
+
+      <div class="nv-stats nv-stagger" id="stats-row"></div>
+
+      <div class="nv-content">
+        <div class="nv-view active" id="view-overview"></div>
+        <div class="nv-view" id="view-queue"></div>
+        <div class="nv-view" id="view-all_requests"></div>
+        <div class="nv-view" id="view-departments"></div>
+        <div class="nv-view" id="view-analytics"></div>
+        <div class="nv-view" id="view-audit"></div>
+      </div>
+
+      <div id="detail-panel" style="display:none"></div>
+    </div>
+  </div>
+
+  <script>
+    let activeView = 'overview';
+    let allFilter = 'all';
+
+    function pcQueue() { return NV.pendingForPC(); }
+
+    // ── User Block ──
+    function renderUserBlock() {
+      const user = NV.USERS.nadia;
+      document.getElementById('user-block').innerHTML = `
+        <div class="nv-user-info">
+          <div class="nv-user-avatar" style="background:#FB7185">${NV.initials(user.name)}</div>
+          <div>
+            <div class="nv-user-name">${user.name}</div>
+            <div class="nv-user-title">People & Culture</div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ── Stats ──
+    function renderStats() {
+      const all = NV.requests;
+      const queue = pcQueue().length;
+      const completed = all.filter(r => r.status === 'pc_approved').length;
+      const totalEmployees = Object.values(NV.DEPTS).reduce((s,d) => s + d.headcount, 0);
+      const totalDepts = Object.keys(NV.DEPTS).length;
+
+      document.getElementById('stats-row').innerHTML = `
+        <div class="nv-stat"><div class="nv-stat-label">PENDING FINAL APPROVAL</div><div class="nv-stat-value" style="color:var(--yellow)">${queue}</div><div class="nv-stat-sub">Dept. approved, awaiting P&C</div></div>
+        <div class="nv-stat"><div class="nv-stat-label">TOTAL REQUESTS</div><div class="nv-stat-value" style="color:var(--t1)">${all.length}</div></div>
+        <div class="nv-stat"><div class="nv-stat-label">APPROVED</div><div class="nv-stat-value" style="color:var(--green)">${completed}</div></div>
+        <div class="nv-stat"><div class="nv-stat-label">ORGANIZATION</div><div class="nv-stat-value" style="color:var(--blue)">${totalEmployees}</div><div class="nv-stat-sub">${totalDepts} departments</div></div>`;
+
+      document.getElementById('nav-queue-badge').textContent = queue;
+      document.getElementById('nav-queue-badge').style.display = queue > 0 ? '' : 'none';
+    }
+
+    // ── Overview ──
+    function renderOverview() {
+      const queue = pcQueue();
+      let html = '';
+
+      if (queue.length > 0) {
+        html += '<div class="nv-section-label">⚠ PENDING YOUR FINAL APPROVAL</div>';
+        html += queue.slice(0, 4).map(r => approvalCardHTML(r, 'ov')).join('');
+        if (queue.length > 4) {
+          html += `<div style="text-align:center;padding:8px"><button class="nv-btn nv-btn-ghost" onclick="setView('queue',document.getElementById('nav-queue'))">View all ${queue.length} pending →</button></div>`;
+        }
+      } else {
+        html += `<div class="nv-empty" style="padding:40px 0"><div class="nv-empty-icon">✅</div><div class="nv-empty-text">All caught up</div><div class="nv-empty-sub">No requests awaiting final approval</div></div>`;
+      }
+
+      // Department summary strip
+      html += '<div class="nv-section-label" style="margin-top:28px">DEPARTMENT SNAPSHOT</div>';
+      html += '<div class="nv-dept-grid" style="grid-template-columns:repeat(3,1fr)">';
+      Object.entries(NV.DEPTS).forEach(([dk, d]) => {
+        if (dk === 'people') return;
+        const reqs = NV.requestsByDept(dk);
+        const pending = reqs.filter(r => r.status === 'submitted').length;
+        const forwarded = reqs.filter(r => r.status === 'dept_approved').length;
+        html += `<div class="nv-dept-card">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+            <span style="font-size:18px">${d.icon}</span>
+            <div>
+              <div class="nv-dept-name" style="font-size:12px">${d.name}</div>
+              <div class="nv-dept-head" style="font-size:9px">${NV.USERS[NV.getDeptHead(dk)]?.name || '—'}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px">
+            <div><div style="font-size:9px;color:var(--t3);letter-spacing:.06em">Requests</div><div style="font-size:16px;font-weight:700;color:var(--t1)">${reqs.length}</div></div>
+            ${pending > 0 ? `<div><div style="font-size:9px;color:var(--t3)">At Dept</div><div style="font-size:16px;font-weight:700;color:var(--yellow)">${pending}</div></div>` : ''}
+            ${forwarded > 0 ? `<div><div style="font-size:9px;color:var(--t3)">At P&C</div><div style="font-size:16px;font-weight:700;color:var(--blue)">${forwarded}</div></div>` : ''}
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+
+      document.getElementById('view-overview').innerHTML = html;
+    }
+
+    // ── Approval Card (with dept head comment shown) ──
+    function approvalCardHTML(r, prefix = 'all') {
+      const mod = NV.MODS[r.module];
+      const user = NV.USERS[r.requester];
+      const dept = NV.DEPTS[user.dept];
+      const deptApproval = r.audit.find(a => a.action === 'dept_approved');
+      const pId = `${prefix}-${r.id}`;
+
+      return `<div class="approval-card" id="approval-${pId}">
+        <div class="approval-top">
+          <div class="nv-req-icon" style="background:${mod.color}18">${mod.icon}</div>
+          <div class="approval-info">
+            <div class="approval-name">${mod.label} — ${user.name}
+              <span class="approval-dept-tag" style="background:${dept.color}18;color:${dept.color}">${dept.name}</span>
+            </div>
+            <div class="approval-meta">${user.title} · Submitted ${NV.fmtDate(r.createdDate)}</div>
+          </div>
+          ${NV.badge(r.status)}
+          <button class="approval-expand" onclick="toggleApproval(${r.id}, '${prefix}')">▾ Review & Finalize</button>
+        </div>
+        <div class="approval-details" id="details-${pId}">
+          ${deptApproval ? `<div class="dept-head-comment">
+            <div class="dept-head-comment-label">DEPT. HEAD APPROVAL NOTE</div>
+            <div class="dept-head-comment-text">"${deptApproval.comment}" — ${NV.USERS[deptApproval.by]?.name}, ${NV.fmtDateTime(deptApproval.date)}</div>
+          </div>` : ''}
+          <div class="nv-info-label" style="margin-top:16px">REQUEST DETAILS</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+            ${Object.entries(r.data).map(([k,v]) => `<div><div class="nv-field-key">${k.replace(/_/g,' ')}</div><div class="nv-field-val">${v}</div></div>`).join('')}
+          </div>
+          
+          <div class="nv-info-label">P&C FINAL REVIEW</div>
+          <div class="comment-box" style="margin-top:8px">
+            <textarea id="comment-text-${pId}" rows="2" placeholder="Add mandatory final review comments..."></textarea>
+            <div class="approval-actions">
+              <button class="nv-btn nv-btn-reject" onclick="confirmAction(${r.id},'reject', '${prefix}')">✗ Return to Dept. Head</button>
+              <button class="nv-btn nv-btn-approve" onclick="confirmAction(${r.id},'approve', '${prefix}')">✓ Final Approval</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function toggleApproval(id, prefix) {
+      const pId = `${prefix}-${id}`;
+      const det = document.getElementById(`details-${pId}`);
+      const btn = det.previousElementSibling.querySelector('.approval-expand');
+      const isOpen = det.classList.toggle('open');
+      btn.textContent = isOpen ? '▴ Hide Details' : '▾ Review & Finalize';
+      if (isOpen) {
+        setTimeout(() => document.getElementById(`comment-text-${pId}`).focus(), 100);
+      }
+    }
+
+    // showComment is now built-in
+
+    function confirmAction(id, action, prefix) {
+      const pId = `${prefix}-${id}`;
+      const textarea = document.getElementById(`comment-text-${pId}`);
+      const comment = textarea.value.trim();
+      if (!comment) {
+        textarea.classList.add('error');
+        textarea.placeholder = 'Comment is required — please add your remarks';
+        textarea.focus();
+        return;
+      }
+
+      const r = NV.requests.find(x => x.id === id);
+      const deptHead = NV.getDeptHead(NV.USERS[r.requester].dept);
+      const deptHeadUser = NV.USERS[deptHead];
+
+      if (action === 'approve') {
+        r.status = 'pc_approved';
+        r.audit.push({ action: 'pc_approved', by: 'nadia', date: new Date().toISOString().slice(0,16).replace('T',' '), comment });
+        NV.toast('Request approved — completed ✓');
+      } else {
+        r.status = 'pc_rejected';
+        r.audit.push({ action: 'pc_rejected', by: 'nadia', date: new Date().toISOString().slice(0,16).replace('T',' '), comment });
+        NV.toast(`Request returned to ${deptHeadUser?.name || 'department head'}`, false);
+      }
+      renderAll();
+    }
+
+    // ── Queue View ──
+    function renderQueue() {
+      const queue = pcQueue();
+      let html = '';
+      if (queue.length === 0) {
+        html = `<div class="nv-empty"><div class="nv-empty-icon">✅</div><div class="nv-empty-text">All caught up</div><div class="nv-empty-sub">No requests awaiting final approval</div></div>`;
+      } else {
+        html = `<div class="nv-section-label">DEPT. APPROVED — AWAITING YOUR FINAL DECISION (${queue.length})</div>`;
+        html += queue.map(r => approvalCardHTML(r, 'pq')).join('');
+      }
+      document.getElementById('view-queue').innerHTML = html;
+    }
+
+    // ── All Requests View ──
+    function renderAllRequests() {
+      let reqs = [...NV.requests];
+      if (allFilter === 'submitted') reqs = reqs.filter(r => r.status === 'submitted');
+      else if (allFilter === 'dept_approved') reqs = reqs.filter(r => r.status === 'dept_approved');
+      else if (allFilter === 'completed') reqs = reqs.filter(r => r.status === 'pc_approved');
+      else if (allFilter === 'returned') reqs = reqs.filter(r => ['dept_rejected','pc_rejected'].includes(r.status));
+      reqs.sort((a,b) => b.createdDate.localeCompare(a.createdDate));
+
+      let html = '';
+      if (reqs.length === 0) {
+        html = `<div class="nv-empty"><div class="nv-empty-icon">📋</div><div class="nv-empty-text">No requests match this filter</div></div>`;
+      } else {
+        html = reqs.map(r => {
+          const mod = NV.MODS[r.module];
+          const user = NV.USERS[r.requester];
+          const dept = NV.DEPTS[user.dept];
+          return `<div class="nv-req-row" onclick="openDetail(${r.id})">
+            <div class="nv-req-icon" style="background:${mod.color}18">${mod.icon}</div>
+            <div class="nv-req-info">
+              <div class="nv-req-name">${mod.label}</div>
+              <div class="nv-req-meta">${user.name} · ${dept.name} · ${NV.fmtDate(r.createdDate)}</div>
+            </div>
+            ${NV.badge(r.status)}
+            <span class="nv-req-chevron">›</span>
+          </div>`;
+        }).join('');
+      }
+      document.getElementById('view-all_requests').innerHTML = html;
+    }
+
+    // ── Departments View ──
+    function renderDepartments() {
+      let html = '<div class="nv-section-label">ALL DEPARTMENTS</div><div class="nv-dept-grid">';
+      Object.entries(NV.DEPTS).forEach(([dk, d]) => {
+        const head = NV.getDeptHead(dk);
+        const headUser = head ? NV.USERS[head] : (dk === 'people' ? NV.USERS.nadia : null);
+        const reqs = NV.requestsByDept(dk);
+        const employees = NV.deptEmployees(dk);
+        const completed = reqs.filter(r => r.status === 'pc_approved').length;
+        const pending = reqs.filter(r => ['submitted','dept_approved'].includes(r.status)).length;
+
+        html += `<div class="nv-dept-card">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <div style="width:40px;height:40px;border-radius:10px;background:${d.color}18;display:flex;align-items:center;justify-content:center;font-size:18px">${d.icon}</div>
+            <div>
+              <div class="nv-dept-name">${d.name}</div>
+              <div class="nv-dept-head">${headUser?.name || '—'} · ${headUser?.title || ''}</div>
+            </div>
+          </div>
+          <div class="nv-dept-stats">
+            <div><div class="nv-dept-stat-label">HEADCOUNT</div><div class="nv-dept-stat-val" style="color:var(--t1)">${d.headcount}</div></div>
+            <div><div class="nv-dept-stat-label">REQUESTS</div><div class="nv-dept-stat-val" style="color:var(--blue)">${reqs.length}</div></div>
+            <div><div class="nv-dept-stat-label">PENDING</div><div class="nv-dept-stat-val" style="color:${pending > 0 ? 'var(--yellow)' : 'var(--t3)'}">${pending}</div></div>
+            <div><div class="nv-dept-stat-label">APPROVED</div><div class="nv-dept-stat-val" style="color:var(--green)">${completed}</div></div>
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+      document.getElementById('view-departments').innerHTML = html;
+    }
+
+    // ── Analytics View ──
+    function renderAnalytics() {
+      const all = NV.requests;
+      const total = all.length;
+      const completed = all.filter(r => r.status === 'pc_approved').length;
+      const approvalRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+      // Dept breakdown
+      const deptData = {};
+      Object.entries(NV.DEPTS).forEach(([dk, d]) => {
+        if (dk === 'people') return;
+        deptData[dk] = { name: d.name, icon: d.icon, color: d.color, count: NV.requestsByDept(dk).length };
+      });
+      const sortedDepts = Object.entries(deptData).sort((a,b) => b[1].count - a[1].count);
+      const maxDept = sortedDepts.length > 0 ? sortedDepts[0][1].count : 1;
+
+      // Module breakdown
+      const modCounts = {};
+      all.forEach(r => { modCounts[r.module] = (modCounts[r.module] || 0) + 1; });
+      const sortedMods = Object.entries(modCounts).sort((a,b) => b[1] - a[1]);
+      const maxMod = sortedMods.length > 0 ? sortedMods[0][1] : 1;
+
+      let html = '<div class="analytics-grid">';
+
+      // Global approval rate
+      html += `<div class="analytics-card">
+        <div class="analytics-card-label">GLOBAL APPROVAL RATE</div>
+        <div class="big-metric" style="color:var(--green)">${approvalRate}%</div>
+        <div class="big-metric-label">${completed} approved out of ${total} total requests</div>
+      </div>`;
+
+      // Processing pipeline
+      const submitted = all.filter(r => r.status === 'submitted').length;
+      const deptApproved = all.filter(r => r.status === 'dept_approved').length;
+      const returned = all.filter(r => ['dept_rejected','pc_rejected'].includes(r.status)).length;
+      html += `<div class="analytics-card">
+        <div class="analytics-card-label">PIPELINE STATUS</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+          ${sBar('At Dept. Head', submitted, total, '#FBBF24')}
+          ${sBar('At P&C', deptApproved, total, '#60A5FA')}
+          ${sBar('Completed', completed, total, '#34D399')}
+          ${sBar('Returned', returned, total, '#F87171')}
+        </div>
+      </div>`;
+
+      // By department
+      html += `<div class="analytics-card">
+        <div class="analytics-card-label">REQUESTS BY DEPARTMENT</div>
+        <div class="nv-bar-chart">
+          ${sortedDepts.map(([k,d]) => `<div class="nv-bar-row">
+            <div class="nv-bar-label">${d.icon} ${d.name.length > 14 ? d.name.slice(0,14)+'…' : d.name}</div>
+            <div class="nv-bar-track"><div class="nv-bar-fill" style="width:${(d.count/maxDept)*100}%;background:${d.color}">${d.count}</div></div>
+          </div>`).join('')}
+        </div>
+      </div>`;
+
+      // By module type
+      html += `<div class="analytics-card">
+        <div class="analytics-card-label">REQUESTS BY TYPE</div>
+        <div class="nv-bar-chart">
+          ${sortedMods.slice(0,8).map(([k,v]) => {
+            const mod = NV.MODS[k];
+            return `<div class="nv-bar-row">
+              <div class="nv-bar-label">${mod.icon} ${mod.label}</div>
+              <div class="nv-bar-track"><div class="nv-bar-fill" style="width:${(v/maxMod)*100}%;background:${mod.color}">${v}</div></div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+
+      // Approval rate by department
+      html += `<div class="analytics-card" style="grid-column:span 2">
+        <div class="analytics-card-label">APPROVAL RATE BY DEPARTMENT</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-top:4px">
+          ${Object.entries(NV.DEPTS).filter(([dk])=>dk!=='people').map(([dk, d]) => {
+            const reqs = NV.requestsByDept(dk);
+            const approved = reqs.filter(r => r.status === 'pc_approved').length;
+            const rate = reqs.length > 0 ? Math.round((approved / reqs.length) * 100) : 0;
+            return `<div style="text-align:center;padding:12px;background:var(--bg);border-radius:8px">
+              <div style="font-size:18px;margin-bottom:4px">${d.icon}</div>
+              <div style="font-size:22px;font-weight:800;color:${rate >= 50 ? 'var(--green)' : rate > 0 ? 'var(--yellow)' : 'var(--t3)'}">${rate}%</div>
+              <div style="font-size:9px;color:var(--t3);margin-top:2px">${d.name.length > 16 ? d.name.slice(0,16)+'…' : d.name}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+
+      html += '</div>';
+      document.getElementById('view-analytics').innerHTML = html;
+    }
+
+    function sBar(label, count, total, color) {
+      const pct = total > 0 ? Math.round((count/total)*100) : 0;
+      return `<div style="display:flex;align-items:center;gap:10px">
+        <div style="width:80px;font-size:11px;color:var(--t2);text-align:right">${label}</div>
+        <div style="flex:1;height:18px;background:var(--bg);border-radius:4px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width .8s ease"></div>
+        </div>
+        <div style="width:30px;font-size:11px;color:var(--t2);font-weight:600">${count}</div>
+      </div>`;
+    }
+
+    // ── Audit Trail View ──
+    function renderAudit() {
+      // Collect all audit entries across all requests, sort by date desc
+      const entries = [];
+      NV.requests.forEach(r => {
+        const mod = NV.MODS[r.module];
+        r.audit.forEach(a => {
+          entries.push({ ...a, reqId: r.id, module: r.module, modLabel: mod.label, modIcon: mod.icon, requester: r.requester });
+        });
+      });
+      entries.sort((a,b) => b.date.localeCompare(a.date));
+
+      const actionLabels = {
+        submitted: 'Submitted', dept_approved: 'Dept. Approved',
+        dept_rejected: 'Dept. Rejected', pc_approved: 'P&C Approved', pc_rejected: 'P&C Returned'
+      };
+      const actionColors = {
+        submitted: '#FBBF24', dept_approved: '#60A5FA',
+        dept_rejected: '#F87171', pc_approved: '#34D399', pc_rejected: '#F87171'
+      };
+
+      let html = `<div class="nv-section-label">FULL AUDIT LOG (${entries.length} actions)</div>`;
+      html += entries.slice(0, 50).map(e => {
+        const user = NV.USERS[e.by];
+        const requester = NV.USERS[e.requester];
+        return `<div class="audit-row">
+          <div class="audit-row-dot" style="background:${actionColors[e.action]}"></div>
+          <div class="audit-row-content">
+            <div class="audit-row-action">${e.modIcon} ${e.modLabel} — ${actionLabels[e.action] || e.action}</div>
+            <div class="audit-row-meta">
+              By ${user?.name || e.by} · For ${requester?.name || e.requester} · ${NV.fmtDateTime(e.date)}
+            </div>
+            ${e.comment ? `<div class="audit-row-comment">"${e.comment}"</div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+
+      document.getElementById('view-audit').innerHTML = html;
+    }
+
+    // ── Detail Panel ──
+    function openDetail(id) {
+      const r = NV.requests.find(x => x.id === id);
+      if (!r) return;
+      const mod = NV.MODS[r.module];
+      const user = NV.USERS[r.requester];
+      const dept = NV.DEPTS[user.dept];
+      const p = document.getElementById('detail-panel');
+      p.style.display = 'block';
+      p.innerHTML = `<div class="nv-panel">
+        <div class="nv-panel-head">
+          <div class="nv-panel-mod">
+            <div class="nv-panel-mod-icon" style="background:${mod.color}18">${mod.icon}</div>
+            <div>
+              <div class="nv-panel-title">${mod.label} Request</div>
+              <div class="nv-panel-meta">#${r.id} · ${dept.name} · ${NV.fmtDate(r.createdDate)}</div>
+            </div>
+          </div>
+          <button class="nv-close-btn" onclick="closeDetail()">✕</button>
+        </div>
+        ${NV.badge(r.status)}
+        <div class="nv-info-block" style="margin-top:16px">
+          <div class="nv-info-label">REQUESTER</div>
+          <div style="font-weight:600;color:#E0E0EE;font-size:14px">${user.name}</div>
+          <div style="font-size:12px;color:var(--t3);margin-top:3px">${user.title} · ${dept.name}</div>
+        </div>
+        <div class="nv-info-block">
+          <div class="nv-info-label">APPROVAL PIPELINE</div>
+          ${NV.pipelineHTML(r)}
+        </div>
+        <div class="nv-info-block">
+          <div class="nv-info-label">REQUEST DETAILS</div>
+          ${Object.entries(r.data).map(([k,v]) => `<div><div class="nv-field-key">${k.replace(/_/g,' ')}</div><div class="nv-field-val">${v}</div></div>`).join('')}
+        </div>
+        <div class="nv-info-block">
+          <div class="nv-info-label">AUDIT TRAIL</div>
+          ${NV.auditHTML(r)}
+        </div>
+      </div>`;
+    }
+    function closeDetail() { document.getElementById('detail-panel').style.display = 'none'; }
+
+    // ── View Switching ──
+    function setView(view, btn) {
+      activeView = view;
+      document.querySelectorAll('.nv-nav-item').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      document.querySelectorAll('.nv-view').forEach(v => v.classList.remove('active'));
+      document.getElementById(`view-${view}`).classList.add('active');
+
+      const tabs = document.getElementById('filter-tabs');
+      tabs.style.display = view === 'all_requests' ? 'flex' : 'none';
+
+      const titles = {
+        overview:'Overview', queue:'Final Approval Queue', all_requests:'All Requests',
+        departments:'Departments', analytics:'Organization Analytics', audit:'Audit Trail'
+      };
+      document.getElementById('h-title').textContent = titles[view] || 'Overview';
+      updateSubtitle();
+
+      if (view === 'overview') renderOverview();
+      else if (view === 'queue') renderQueue();
+      else if (view === 'all_requests') renderAllRequests();
+      else if (view === 'departments') renderDepartments();
+      else if (view === 'analytics') renderAnalytics();
+      else if (view === 'audit') renderAudit();
+    }
+
+    function setAllFilter(f, btn) {
+      allFilter = f;
+      document.querySelectorAll('.nv-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderAllRequests();
+    }
+
+    function updateSubtitle() {
+      const all = NV.requests;
+      document.getElementById('h-sub').textContent =
+        `People & Culture Administration · ${all.length} total requests · ${pcQueue().length} awaiting final approval`;
+    }
+
+    function renderAll() {
+      renderStats();
+      renderUserBlock();
+      renderOverview();
+      renderQueue();
+      renderAllRequests();
+      renderDepartments();
+      renderAnalytics();
+      renderAudit();
+      updateSubtitle();
+    }
+
+    renderAll();
+  </script>
+</body>
+</html>

@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEXT Ventures — Department Head Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/nv_platform.css">
+  <script src="assets/js/nv_data.js"></script>
+  <style>
+    .approval-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 18px 20px; margin-bottom: 10px; transition: all .2s;
+    }
+    .approval-card:hover { border-color: var(--border-h); }
+    .approval-top { display: flex; align-items: center; gap: 14px; }
+    .approval-info { flex: 1; min-width: 0; }
+    .approval-name { font-weight: 600; font-size: 14px; color: var(--t1); }
+    .approval-meta { font-size: 11px; color: var(--t3); margin-top: 3px; }
+    .approval-expand { color: var(--t3); cursor: pointer; font-size: 14px; padding: 6px 10px; border-radius: 8px; background: none; border: none; font-family: inherit; transition: all .15s; }
+    .approval-expand:hover { background: var(--card-hover); color: var(--t2); }
+    .approval-details { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); display: none; animation: nvFadeIn .2s ease; }
+    .approval-details.open { display: block; }
+    .approval-actions { display: flex; gap: 8px; margin-top: 14px; }
+    .approval-actions .nv-btn { flex: 1; padding: 10px 0; font-size: 12.5px; }
+    .comment-box { margin-top: 12px; animation: nvFadeIn .2s ease; }
+    .comment-box textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 9px; padding: 10px 14px; color: var(--t1); font-size: 13px; outline: none; font-family: inherit; resize: vertical; margin-bottom: 8px; transition: border-color .15s; }
+    .comment-box textarea:focus { border-color: var(--accent); }
+    .comment-box textarea.error { border-color: var(--red); }
+    .comment-confirm { display: flex; gap: 8px; justify-content: flex-end; }
+    .comment-confirm .nv-btn { padding: 8px 20px; font-size: 12px; }
+    .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .analytics-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
+    .analytics-card-label { font-size: 10px; font-weight: 700; color: var(--t3); letter-spacing: .12em; margin-bottom: 12px; }
+    .big-metric { font-size: 36px; font-weight: 800; letter-spacing: -1px; }
+    .big-metric-label { font-size: 11px; color: var(--t3); margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="nv-app">
+    <!-- Sidebar -->
+    <div class="nv-sidebar">
+      <div class="nv-logo">
+        <img src="https://fundednext-production-bucket.s3.ap-northeast-1.amazonaws.com/fundednext/nv_logo.svg" alt="NEXT Ventures">
+        <div class="nv-logo-sub">INTERNAL OPERATIONS · v2.0</div>
+      </div>
+      <div class="nv-nav">
+        <div class="nv-nav-label">NAVIGATION</div>
+        <button class="nv-nav-item active" onclick="setView('overview',this)">
+          <span class="nv-nav-icon">📊</span><span class="nv-nav-text">Overview</span>
+        </button>
+        <button class="nv-nav-item" onclick="setView('pending',this)" id="nav-pending">
+          <span class="nv-nav-icon">📥</span><span class="nv-nav-text">Pending Approvals</span>
+          <span class="nv-nav-badge" id="nav-pending-badge"></span>
+        </button>
+        <button class="nv-nav-item" onclick="setView('all_requests',this)">
+          <span class="nv-nav-icon">📋</span><span class="nv-nav-text">All Dept. Requests</span>
+        </button>
+        <div class="nv-nav-divider"></div>
+        <button class="nv-nav-item" onclick="setView('team',this)">
+          <span class="nv-nav-icon">👥</span><span class="nv-nav-text">My Team</span>
+        </button>
+        <button class="nv-nav-item" onclick="setView('analytics',this)">
+          <span class="nv-nav-icon">📈</span><span class="nv-nav-text">Department Analytics</span>
+        </button>
+      </div>
+      <div class="nv-user-block" id="user-block"></div>
+      <div class="nv-footer"><a href="next_ventures.html">← Switch Role</a></div>
+    </div>
+
+    <!-- Main -->
+    <div class="nv-main">
+      <div class="nv-header">
+        <div>
+          <div class="nv-header-title" id="h-title">Overview</div>
+          <div class="nv-header-sub" id="h-sub"></div>
+        </div>
+        <div class="nv-tabs" id="filter-tabs" style="display:none">
+          <button class="nv-tab active" onclick="setAllFilter('all',this)">All</button>
+          <button class="nv-tab" onclick="setAllFilter('submitted',this)">Submitted</button>
+          <button class="nv-tab" onclick="setAllFilter('in_progress',this)">In Progress</button>
+          <button class="nv-tab" onclick="setAllFilter('completed',this)">Completed</button>
+          <button class="nv-tab" onclick="setAllFilter('returned',this)">Returned</button>
+        </div>
+      </div>
+
+      <div class="nv-stats nv-stagger" id="stats-row"></div>
+
+      <div class="nv-content" id="main-content">
+        <div class="nv-view active" id="view-overview"></div>
+        <div class="nv-view" id="view-pending"></div>
+        <div class="nv-view" id="view-all_requests"></div>
+        <div class="nv-view" id="view-team"></div>
+        <div class="nv-view" id="view-analytics"></div>
+      </div>
+
+      <div id="detail-panel" style="display:none"></div>
+    </div>
+  </div>
+
+  <script>
+    // ── Init ──
+    const deptKey = NV.getParam('dept') || 'technology';
+    const headKey = NV.getDeptHead(deptKey);
+    const currentUser = NV.USERS[headKey];
+    const currentDept = NV.DEPTS[deptKey];
+    let activeView = 'overview';
+    let allFilter = 'all';
+
+    function deptReqs() { return NV.requestsByDept(deptKey); }
+    function pendingReqs() { return NV.pendingForDept(deptKey); }
+
+    // ── User Block ──
+    document.getElementById('user-block').innerHTML = `
+      <div class="nv-user-info">
+        <div class="nv-user-avatar" style="background:${currentDept.color}">${NV.initials(currentUser.name)}</div>
+        <div>
+          <div class="nv-user-name">${currentUser.name}</div>
+          <div class="nv-user-title">${currentDept.name}</div>
+        </div>
+      </div>`;
+
+    // ── Stats ──
+    function renderStats() {
+      const reqs = deptReqs();
+      const pending = pendingReqs().length;
+      const forwarded = reqs.filter(r => r.status === 'dept_approved').length;
+      const completed = reqs.filter(r => r.status === 'pc_approved').length;
+      const team = NV.deptEmployees(deptKey).length;
+
+      document.getElementById('stats-row').innerHTML = `
+        <div class="nv-stat"><div class="nv-stat-label">PENDING MY REVIEW</div><div class="nv-stat-value" style="color:var(--yellow)">${pending}</div><div class="nv-stat-sub">Awaiting your decision</div></div>
+        <div class="nv-stat"><div class="nv-stat-label">FORWARDED TO P&C</div><div class="nv-stat-value" style="color:var(--blue)">${forwarded}</div></div>
+        <div class="nv-stat"><div class="nv-stat-label">COMPLETED</div><div class="nv-stat-value" style="color:var(--green)">${completed}</div></div>
+        <div class="nv-stat"><div class="nv-stat-label">TEAM MEMBERS</div><div class="nv-stat-value" style="color:var(--t1)">${team}</div></div>`;
+
+      document.getElementById('nav-pending-badge').textContent = pending;
+      document.getElementById('nav-pending-badge').style.display = pending > 0 ? '' : 'none';
+    }
+
+    // ── Overview ──
+    function renderOverview() {
+      const pending = pendingReqs();
+      let html = '';
+
+      if (pending.length > 0) {
+        html += '<div class="nv-section-label">⚠ REQUIRES YOUR ATTENTION</div>';
+        html += pending.slice(0, 4).map(r => approvalCardHTML(r, 'ov')).join('');
+        if (pending.length > 4) {
+          html += `<div style="text-align:center;padding:8px"><button class="nv-btn nv-btn-ghost" onclick="setView('pending',document.getElementById('nav-pending'))">View all ${pending.length} pending →</button></div>`;
+        }
+      } else {
+        html += `<div class="nv-empty" style="padding:40px 0"><div class="nv-empty-icon">✅</div><div class="nv-empty-text">All caught up</div><div class="nv-empty-sub">No pending approvals at this time</div></div>`;
+      }
+
+      // Recent department activity
+      const recent = deptReqs().sort((a,b) => {
+        const aLast = a.audit[a.audit.length-1].date;
+        const bLast = b.audit[b.audit.length-1].date;
+        return bLast.localeCompare(aLast);
+      }).slice(0, 5);
+
+      html += '<div class="nv-section-label" style="margin-top:28px">RECENT DEPARTMENT ACTIVITY</div>';
+      html += recent.map(r => {
+        const mod = NV.MODS[r.module];
+        const user = NV.USERS[r.requester];
+        return `<div class="nv-req-row" onclick="openDetail(${r.id})">
+          <div class="nv-req-icon" style="background:${mod.color}18">${mod.icon}</div>
+          <div class="nv-req-info">
+            <div class="nv-req-name">${mod.label}</div>
+            <div class="nv-req-meta">${user.name} · ${NV.fmtDate(r.createdDate)}</div>
+          </div>
+          ${NV.badge(r.status)}
+          <span class="nv-req-chevron">›</span>
+        </div>`;
+      }).join('');
+
+      document.getElementById('view-overview').innerHTML = html;
+    }
+
+    // ── Approval Card ──
+    function approvalCardHTML(r, prefix = 'all') {
+      const mod = NV.MODS[r.module];
+      const user = NV.USERS[r.requester];
+      const pId = `${prefix}-${r.id}`;
+      return `<div class="approval-card" id="approval-${pId}">
+        <div class="approval-top">
+          <div class="nv-req-icon" style="background:${mod.color}18">${mod.icon}</div>
+          <div class="approval-info">
+            <div class="approval-name">${mod.label} — ${user.name}</div>
+            <div class="approval-meta">${user.title} · Submitted ${NV.fmtDate(r.createdDate)}</div>
+          </div>
+          ${NV.badge(r.status)}
+          <button class="approval-expand" onclick="toggleApproval(${r.id}, '${prefix}')">▾ Details & Review</button>
+        </div>
+        <div class="approval-details" id="details-${pId}">
+          <div class="nv-info-label" style="margin-top:0">REQUEST DETAILS</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+            ${Object.entries(r.data).map(([k,v]) => `<div><div class="nv-field-key">${k.replace(/_/g,' ')}</div><div class="nv-field-val">${v}</div></div>`).join('')}
+          </div>
+          
+          <div class="nv-info-label">YOUR REVIEW</div>
+          <div class="comment-box" style="margin-top:8px">
+            <textarea id="comment-text-${pId}" rows="2" placeholder="Add your mandatory review comments here..."></textarea>
+            <div class="approval-actions">
+              <button class="nv-btn nv-btn-reject" onclick="confirmAction(${r.id},'reject', '${prefix}')">✗ Reject Request</button>
+              <button class="nv-btn nv-btn-approve" onclick="confirmAction(${r.id},'approve', '${prefix}')">✓ Approve & Forward</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function toggleApproval(id, prefix) {
+      const pId = `${prefix}-${id}`;
+      const det = document.getElementById(`details-${pId}`);
+      const btn = det.previousElementSibling.querySelector('.approval-expand');
+      const isOpen = det.classList.toggle('open');
+      btn.textContent = isOpen ? '▴ Hide Details' : '▾ Details & Review';
+      if (isOpen) {
+        setTimeout(() => document.getElementById(`comment-text-${pId}`).focus(), 100);
+      }
+    }
+
+    // showComment is now deprecated as it's built-in
+
+    function confirmAction(id, action, prefix) {
+      const pId = `${prefix}-${id}`;
+      const textarea = document.getElementById(`comment-text-${pId}`);
+      const comment = textarea.value.trim();
+      if (!comment) {
+        textarea.classList.add('error');
+        textarea.placeholder = 'Comment is required — please add your remarks';
+        textarea.focus();
+        return;
+      }
+
+      const r = NV.requests.find(x => x.id === id);
+      const user = NV.USERS[r.requester];
+      if (action === 'approve') {
+        r.status = 'dept_approved';
+        r.audit.push({ action: 'dept_approved', by: headKey, date: new Date().toISOString().slice(0,16).replace('T',' '), comment });
+        NV.toast(`Request approved — forwarded to People & Culture`);
+      } else {
+        r.status = 'dept_rejected';
+        r.audit.push({ action: 'dept_rejected', by: headKey, date: new Date().toISOString().slice(0,16).replace('T',' '), comment });
+        NV.toast(`Request returned to ${user.name}`, false);
+      }
+      renderAll();
+    }
+
+    // ── Pending View ──
+    function renderPending() {
+      const pending = pendingReqs();
+      let html = '';
+      if (pending.length === 0) {
+        html = `<div class="nv-empty"><div class="nv-empty-icon">✅</div><div class="nv-empty-text">All caught up</div><div class="nv-empty-sub">No requests awaiting your review</div></div>`;
+      } else {
+        html = `<div class="nv-section-label">AWAITING YOUR REVIEW (${pending.length})</div>`;
+        html += pending.map(r => approvalCardHTML(r, 'pn')).join('');
+      }
+      document.getElementById('view-pending').innerHTML = html;
+    }
+
+    // ── All Requests View ──
+    function renderAllRequests() {
+      let reqs = deptReqs();
+      if (allFilter === 'submitted') reqs = reqs.filter(r => r.status === 'submitted');
+      else if (allFilter === 'in_progress') reqs = reqs.filter(r => r.status === 'dept_approved');
+      else if (allFilter === 'completed') reqs = reqs.filter(r => r.status === 'pc_approved');
+      else if (allFilter === 'returned') reqs = reqs.filter(r => ['dept_rejected','pc_rejected'].includes(r.status));
+
+      reqs.sort((a,b) => b.createdDate.localeCompare(a.createdDate));
+
+      let html = '';
+      if (reqs.length === 0) {
+        html = `<div class="nv-empty"><div class="nv-empty-icon">📋</div><div class="nv-empty-text">No requests match this filter</div></div>`;
+      } else {
+        html = reqs.map(r => {
+          const mod = NV.MODS[r.module];
+          const user = NV.USERS[r.requester];
+          return `<div class="nv-req-row" onclick="openDetail(${r.id})">
+            <div class="nv-req-icon" style="background:${mod.color}18">${mod.icon}</div>
+            <div class="nv-req-info">
+              <div class="nv-req-name">${mod.label}</div>
+              <div class="nv-req-meta">${user.name} · ${user.title} · ${NV.fmtDate(r.createdDate)}</div>
+            </div>
+            ${NV.badge(r.status)}
+            <span class="nv-req-chevron">›</span>
+          </div>`;
+        }).join('');
+      }
+      document.getElementById('view-all_requests').innerHTML = html;
+    }
+
+    // ── Team View ──
+    function renderTeam() {
+      const members = NV.deptEmployees(deptKey);
+      let html = '<div class="nv-section-label">TEAM MEMBERS (' + members.length + ')</div><div class="nv-team-grid">';
+      members.forEach(m => {
+        const reqs = NV.requestsByUser(m.key);
+        const pending = reqs.filter(r => ['submitted','dept_approved'].includes(r.status)).length;
+        const onLeave = reqs.some(r => r.module === 'leave' && r.status === 'pc_approved' &&
+          r.data.from && r.data.to && new Date(r.data.from) <= new Date('2026-04-01') && new Date(r.data.to) >= new Date('2026-04-01'));
+        const onWFH = reqs.some(r => r.module === 'wfh' && ['dept_approved','pc_approved'].includes(r.status) &&
+          r.data.from && r.data.to && new Date(r.data.from) <= new Date('2026-04-01') && new Date(r.data.to) >= new Date('2026-04-01'));
+
+        html += `<div class="nv-team-card">
+          <div class="nv-team-avatar" style="background:${currentDept.color}">${NV.initials(m.name)}</div>
+          <div class="nv-team-name">${m.name}</div>
+          <div class="nv-team-title">${m.title}</div>
+          <div style="margin-top:10px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
+            ${onLeave ? '<span class="nv-badge" style="background:rgba(129,140,248,.12);color:#818CF8;font-size:9px;padding:2px 8px">On Leave</span>' : ''}
+            ${onWFH ? '<span class="nv-badge" style="background:rgba(52,211,153,.12);color:#34D399;font-size:9px;padding:2px 8px">WFH</span>' : ''}
+            ${pending > 0 ? `<span class="nv-badge" style="background:rgba(251,191,36,.12);color:#FBBF24;font-size:9px;padding:2px 8px">${pending} pending</span>` : ''}
+            ${!onLeave && !onWFH && pending === 0 ? '<span class="nv-badge" style="background:rgba(52,211,153,.12);color:#34D399;font-size:9px;padding:2px 8px">In Office</span>' : ''}
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+      document.getElementById('view-team').innerHTML = html;
+    }
+
+    // ── Analytics View ──
+    function renderAnalytics() {
+      const reqs = deptReqs();
+      const total = reqs.length;
+      const completed = reqs.filter(r => r.status === 'pc_approved').length;
+      const rejected = reqs.filter(r => ['dept_rejected','pc_rejected'].includes(r.status)).length;
+      const approvalRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+      // Module breakdown
+      const modCounts = {};
+      reqs.forEach(r => { modCounts[r.module] = (modCounts[r.module] || 0) + 1; });
+      const sortedMods = Object.entries(modCounts).sort((a,b) => b[1] - a[1]);
+      const maxMod = sortedMods.length > 0 ? sortedMods[0][1] : 1;
+
+      let html = '<div class="analytics-grid">';
+
+      // Approval Rate
+      html += `<div class="analytics-card">
+        <div class="analytics-card-label">APPROVAL RATE</div>
+        <div class="big-metric" style="color:var(--green)">${approvalRate}%</div>
+        <div class="big-metric-label">${completed} approved out of ${total} total</div>
+      </div>`;
+
+      // Status breakdown
+      html += `<div class="analytics-card">
+        <div class="analytics-card-label">STATUS BREAKDOWN</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+          ${statusBar('Submitted', reqs.filter(r=>r.status==='submitted').length, total, '#FBBF24')}
+          ${statusBar('Dept. Approved', reqs.filter(r=>r.status==='dept_approved').length, total, '#60A5FA')}
+          ${statusBar('Completed', completed, total, '#34D399')}
+          ${statusBar('Returned', rejected, total, '#F87171')}
+        </div>
+      </div>`;
+
+      // Request by Type
+      html += `<div class="analytics-card" style="grid-column:span 2">
+        <div class="analytics-card-label">REQUESTS BY TYPE</div>
+        <div class="nv-bar-chart">
+          ${sortedMods.map(([k,v]) => {
+            const mod = NV.MODS[k];
+            return `<div class="nv-bar-row">
+              <div class="nv-bar-label">${mod.icon} ${mod.label}</div>
+              <div class="nv-bar-track"><div class="nv-bar-fill" style="width:${(v/maxMod)*100}%;background:${mod.color}">${v}</div></div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+
+      html += '</div>';
+      document.getElementById('view-analytics').innerHTML = html;
+    }
+
+    function statusBar(label, count, total, color) {
+      const pct = total > 0 ? Math.round((count/total)*100) : 0;
+      return `<div style="display:flex;align-items:center;gap:10px">
+        <div style="width:90px;font-size:11px;color:var(--t2);text-align:right">${label}</div>
+        <div style="flex:1;height:18px;background:var(--bg);border-radius:4px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width .8s ease"></div>
+        </div>
+        <div style="width:30px;font-size:11px;color:var(--t2);font-weight:600">${count}</div>
+      </div>`;
+    }
+
+    // ── Detail Panel ──
+    function openDetail(id) {
+      const r = NV.requests.find(x => x.id === id);
+      if (!r) return;
+      const mod = NV.MODS[r.module];
+      const user = NV.USERS[r.requester];
+      const p = document.getElementById('detail-panel');
+      p.style.display = 'block';
+      p.innerHTML = `<div class="nv-panel">
+        <div class="nv-panel-head">
+          <div class="nv-panel-mod">
+            <div class="nv-panel-mod-icon" style="background:${mod.color}18">${mod.icon}</div>
+            <div>
+              <div class="nv-panel-title">${mod.label} Request</div>
+              <div class="nv-panel-meta">#${r.id} · ${NV.fmtDate(r.createdDate)}</div>
+            </div>
+          </div>
+          <button class="nv-close-btn" onclick="closeDetail()">✕</button>
+        </div>
+        ${NV.badge(r.status)}
+        <div class="nv-info-block" style="margin-top:16px">
+          <div class="nv-info-label">REQUESTER</div>
+          <div style="font-weight:600;color:#E0E0EE;font-size:14px">${user.name}</div>
+          <div style="font-size:12px;color:var(--t3);margin-top:3px">${user.title}</div>
+        </div>
+        <div class="nv-info-block">
+          <div class="nv-info-label">APPROVAL PIPELINE</div>
+          ${NV.pipelineHTML(r)}
+        </div>
+        <div class="nv-info-block">
+          <div class="nv-info-label">REQUEST DETAILS</div>
+          ${Object.entries(r.data).map(([k,v]) => `<div><div class="nv-field-key">${k.replace(/_/g,' ')}</div><div class="nv-field-val">${v}</div></div>`).join('')}
+        </div>
+        <div class="nv-info-block">
+          <div class="nv-info-label">AUDIT TRAIL</div>
+          ${NV.auditHTML(r)}
+        </div>
+      </div>`;
+    }
+
+    function closeDetail() { document.getElementById('detail-panel').style.display = 'none'; }
+
+    // ── View Switching ──
+    function setView(view, btn) {
+      activeView = view;
+      document.querySelectorAll('.nv-nav-item').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      document.querySelectorAll('.nv-view').forEach(v => v.classList.remove('active'));
+      document.getElementById(`view-${view}`).classList.add('active');
+
+      const tabs = document.getElementById('filter-tabs');
+      tabs.style.display = view === 'all_requests' ? 'flex' : 'none';
+
+      const titles = { overview:'Overview', pending:'Pending Approvals', all_requests:'Department Requests', team:'My Team', analytics:'Department Analytics' };
+      document.getElementById('h-title').textContent = titles[view] || 'Overview';
+      updateSubtitle();
+
+      if (view === 'overview') renderOverview();
+      else if (view === 'pending') renderPending();
+      else if (view === 'all_requests') renderAllRequests();
+      else if (view === 'team') renderTeam();
+      else if (view === 'analytics') renderAnalytics();
+    }
+
+    function setAllFilter(f, btn) {
+      allFilter = f;
+      document.querySelectorAll('.nv-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderAllRequests();
+    }
+
+    function updateSubtitle() {
+      const sub = document.getElementById('h-sub');
+      const reqs = deptReqs();
+      sub.textContent = `${currentDept.name} · ${reqs.length} total requests · ${pendingReqs().length} awaiting review`;
+    }
+
+    function renderAll() {
+      renderStats();
+      renderOverview();
+      renderPending();
+      renderAllRequests();
+      renderTeam();
+      renderAnalytics();
+      updateSubtitle();
+    }
+
+    renderAll();
+  </script>
+</body>
+</html>
